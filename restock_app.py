@@ -45,12 +45,12 @@ def load_cfg():
         "ZORT_CYCLE":       "cycle_days",
         "ZORT_BUFFER":      "buffer",
     }
+    base.update(_mem_cfg)
     for env_k, cfg_k in env_map.items():
         v = os.environ.get(env_k)
         if v:
             base[cfg_k] = int(v) if cfg_k == "cycle_days" else \
                           float(v) if cfg_k == "buffer" else v
-    base.update(_mem_cfg)
     return base
 
 def save_cfg(cfg):
@@ -119,6 +119,37 @@ def warehouses():
         return jsonify(d.get("list", []))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/api/debug")
+def debug():
+    cfg = load_cfg()
+    kc = cfg.get("khlang_code","")
+    fc = cfg.get("front_code","")
+    info = {
+        "storename": cfg.get("storename",""),
+        "apikey_prefix": cfg.get("apikey","")[:8] + "..." if cfg.get("apikey") else "",
+        "apisecret": "set" if cfg.get("apisecret") else "MISSING",
+        "khlang_code": kc, "front_code": fc,
+    }
+    try:
+        if kc:
+            r = zort_get(cfg, "/Product/GetProducts", {"warehousecode": kc, "activestatus": 1, "page": 1, "limit": 3})
+            info["khlang_test"] = {"res": r.get("res"), "count": r.get("count"), "items": len(r.get("list",[]))}
+        if fc:
+            r = zort_get(cfg, "/Product/GetProducts", {"warehousecode": fc, "activestatus": 1, "page": 1, "limit": 3})
+            info["front_test"] = {"res": r.get("res"), "count": r.get("count"), "items": len(r.get("list",[]))}
+        r3 = zort_get(cfg, "/Product/GetProducts", {"activestatus": 1, "page": 1, "limit": 3})
+        info["all_products"] = {"res": r3.get("res"), "count": r3.get("count"), "sample_keys": list((r3.get("list") or [{}])[0].keys()) if r3.get("list") else []}
+        since7 = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        r2 = zort_get(cfg, "/Order/GetOrders", {"orderdateafter": since7, "page": 1, "limit": 3})
+        info["orders_7d"] = {"res": r2.get("res"), "count": r2.get("count")}
+        for o in (r2.get("list") or [])[:1]:
+            items = o.get("products") or o.get("orderProducts") or o.get("items") or o.get("list") or []
+            if items:
+                info["orders_7d"]["item_keys"] = list(items[0].keys())
+    except Exception as e:
+        info["error"] = str(e)
+    return jsonify(info)
 
 @app.route("/api/refresh")
 def refresh():
