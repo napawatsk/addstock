@@ -72,7 +72,7 @@ def hdrs(cfg):
 
 def zort_get(cfg, path, params=None):
     r = req.get(f"{ZORT_BASE}{path}", headers=hdrs(cfg),
-                params=params or {}, timeout=30)
+                params=params or {}, timeout=60)
     r.raise_for_status()
     return r.json()
 
@@ -179,8 +179,8 @@ def refresh():
                 meta[s] = {"name": p.get("name", s),
                            "category": p.get("category","ไม่ระบุ") or "ไม่ระบุ"}
 
-        # 2. 90-day sales
-        since  = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+        # 2. 30-day sales (90-day would be too slow - ZORT API timeout)
+        since  = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
         orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since})
 
         qty90 = defaultdict(float)
@@ -220,8 +220,8 @@ def refresh():
                 "category": m["category"],
                 "khlang":   int(kq),
                 "front":    int(fq),
-                "daily":    round(q90 / 90, 2),
-                "sales90":  int(q90),
+                "daily":    round(q90 / 30, 2),
+                "sales30":  int(q90),
                 "abc":      abc_map.get(s, "C"),
             })
 
@@ -590,7 +590,7 @@ function buildCategories() {
   const cats = {};
   allProducts.forEach(p => {
     if (!cats[p.category]) cats[p.category] = {name:p.category, s90:0, products:[]};
-    cats[p.category].s90 += p.sales90;
+    cats[p.category].s90 += p.sales30;
     cats[p.category].products.push(p);
   });
   const sorted = Object.values(cats).sort((a,b) => b.s90 - a.s90);
@@ -603,11 +603,11 @@ function buildCategories() {
   });
   // ABC per product within category
   sorted.forEach(cat => {
-    const ps  = [...cat.products].sort((a,b) => b.sales90 - a.sales90);
-    const tot = ps.reduce((s,p) => s + p.sales90, 0);
+    const ps  = [...cat.products].sort((a,b) => b.sales30 - a.sales30);
+    const tot = ps.reduce((s,p) => s + p.sales30, 0);
     let c2 = 0;
     ps.forEach(p => {
-      c2 += p.sales90;
+      c2 += p.sales30;
       const pct = c2 / tot;
       p.abc = pct <= 0.70 ? 'A' : pct <= 0.90 ? 'B' : 'C';
     });
@@ -644,7 +644,7 @@ function buildHome() {
       <div class="rank-num">${i+1}</div>
       <div class="abc ${cat.abc}">${cat.abc}</div>
       <div class="cname">${cat.name}</div>
-      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 90 วัน</div>
+      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 30 วัน</div>
       <div class="cneed"><span class="n-badge ${bdgCls}">${bdgTxt}</span></div>
     </div>`;
   }).join('');
@@ -693,7 +693,7 @@ function renderDetail() {
   const needN   = allCalc.filter(p => p.canMove > 0).length;
   const noKhlN  = allCalc.filter(p => p.noKhl).length;
   document.getElementById('dh-stats').innerHTML =
-    `<span><b>${(currentCat.s90/1000).toFixed(1)}K</b> ชิ้น/90วัน</span>
+    `<span><b>${(currentCat.s90/1000).toFixed(1)}K</b> ชิ้น/30วัน</span>
      <span><b>${allCalc.length}</b> SKUs</span>
      <span style="color:var(--red)"><b>${needN}</b> ต้องเติม</span>
      ${noKhlN ? `<span style="color:var(--orange)"><b>${noKhlN}</b> คลังหมด</span>` : ''}`;
