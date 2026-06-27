@@ -82,7 +82,9 @@ def all_pages(cfg, path, extra=None):
     while True:
         params.update({"page": page, "limit": 500})
         d = zort_get(cfg, path, params)
-        if d.get("res") != 200:
+        res = d.get("res")
+        ok = (isinstance(res, dict) and res.get("resCode") == "200") or res == 200
+        if not ok:
             break
         batch = d.get("list", [])
         if not batch:
