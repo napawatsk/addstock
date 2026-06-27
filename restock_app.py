@@ -76,10 +76,10 @@ def zort_get(cfg, path, params=None):
     r.raise_for_status()
     return r.json()
 
-def all_pages(cfg, path, extra=None):
+def all_pages(cfg, path, extra=None, max_pages=999):
     items, page = [], 1
     params = dict(extra or {})
-    while True:
+    while page <= max_pages:
         params.update({"page": page, "limit": 500})
         d = zort_get(cfg, path, params)
         res = d.get("res")
@@ -179,11 +179,11 @@ def refresh():
                 meta[s] = {"name": p.get("name", s),
                            "category": p.get("category","ไม่ระบุ") or "ไม่ระบุ"}
 
-        # 2. 30-day sales (90-day would be too slow - ZORT API timeout)
-        since  = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since})
+        # 2. Recent sales - capped at 8 pages (4000 orders) for speed
+        since  = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=8)
 
-        qty90 = defaultdict(float)
+        qty90 = defaultdict(float)  # renamed but covers sales period
         rev90 = defaultdict(float)
         for order in orders:
             items = (order.get("products") or order.get("orderProducts") or
