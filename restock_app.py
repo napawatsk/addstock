@@ -76,10 +76,10 @@ def zort_get(cfg, path, params=None):
     r.raise_for_status()
     return r.json()
 
-def all_pages(cfg, path, extra=None, max_pages=999):
+def all_pages(cfg, path, extra=None):
     items, page = [], 1
     params = dict(extra or {})
-    while page <= max_pages:
+    while True:
         params.update({"page": page, "limit": 500})
         d = zort_get(cfg, path, params)
         res = d.get("res")
@@ -179,11 +179,11 @@ def refresh():
                 meta[s] = {"name": p.get("name", s),
                            "category": p.get("category","ไม่ระบุ") or "ไม่ระบุ"}
 
-        # 2. Recent sales - capped at 8 pages (4000 orders) for speed
-        since  = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=8)
+        # 2. 30-day sales (90-day would be too slow - ZORT API timeout)
+        since  = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since})
 
-        qty90 = defaultdict(float)  # renamed but covers sales period
+        qty90 = defaultdict(float)
         rev90 = defaultdict(float)
         for order in orders:
             items = (order.get("products") or order.get("orderProducts") or
@@ -220,7 +220,7 @@ def refresh():
                 "category": m["category"],
                 "khlang":   int(kq),
                 "front":    int(fq),
-                "daily":    round(q90 / 30, 2),
+                "daily":    round(q90 / 14, 2),
                 "sales30":  int(q90),
                 "abc":      abc_map.get(s, "C"),
             })
@@ -644,7 +644,7 @@ function buildHome() {
       <div class="rank-num">${i+1}</div>
       <div class="abc ${cat.abc}">${cat.abc}</div>
       <div class="cname">${cat.name}</div>
-      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 30 วัน</div>
+      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 14 วัน</div>
       <div class="cneed"><span class="n-badge ${bdgCls}">${bdgTxt}</span></div>
     </div>`;
   }).join('');
@@ -693,7 +693,7 @@ function renderDetail() {
   const needN   = allCalc.filter(p => p.canMove > 0).length;
   const noKhlN  = allCalc.filter(p => p.noKhl).length;
   document.getElementById('dh-stats').innerHTML =
-    `<span><b>${(currentCat.s90/1000).toFixed(1)}K</b> ชิ้น/30วัน</span>
+    `<span><b>${(currentCat.s90/1000).toFixed(1)}K</b> ชิ้น/14วัน</span>
      <span><b>${allCalc.length}</b> SKUs</span>
      <span style="color:var(--red)"><b>${needN}</b> ต้องเติม</span>
      ${noKhlN ? `<span style="color:var(--orange)"><b>${noKhlN}</b> คลังหมด</span>` : ''}`;
