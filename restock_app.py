@@ -164,6 +164,28 @@ def debug():
         info["error"] = str(e)
     return jsonify(info)
 
+@app.route("/api/debug-order")
+def debug_order():
+    cfg = load_cfg()
+    since = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
+    try:
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=1, page_size=3)
+        if not orders:
+            return jsonify({"error": "no orders found in last 3 days"})
+        order = orders[0]
+        raw_items = (order.get("products") or order.get("orderProducts") or
+                     order.get("items") or order.get("list") or [])
+        item_sample = raw_items[:2]
+        return jsonify({
+            "order_keys": list(order.keys()),
+            "item_count": len(raw_items),
+            "item_keys": list(raw_items[0].keys()) if raw_items else [],
+            "item_sample": item_sample
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 @app.route("/api/refresh")
 def refresh():
     global _cache_data, _cache_time
@@ -214,7 +236,7 @@ def refresh():
                 s = it.get("sku") or it.get("productSku","")
                 if not s:
                     continue
-                qty90[s] += float(it.get("number",0) or 0)
+                qty90[s] += float(it.get("qty") or it.get("number") or it.get("quantity") or it.get("amount") or 0)
                 rev90[s] += float(it.get("totalprice",0) or 0)
 
         # 3. ABC from 90-day revenue (global ranking)
