@@ -81,12 +81,18 @@ def zort_get(cfg, path, params=None):
     r.raise_for_status()
     return r.json()
 
-def all_pages(cfg, path, extra=None):
+def all_pages(cfg, path, extra=None, max_pages=999, page_size=200):
     items, page = [], 1
     params = dict(extra or {})
-    while True:
-        params.update({"page": page, "limit": 500})
-        d = zort_get(cfg, path, params)
+    while page <= max_pages:
+        params.update({"page": page, "limit": page_size})
+        for attempt in range(2):
+            try:
+                d = zort_get(cfg, path, params)
+                break
+            except Exception:
+                if attempt == 1:
+                    raise
         res = d.get("res")
         ok = (isinstance(res, dict) and res.get("resCode") == "200") or res == 200
         if not ok:
@@ -196,8 +202,8 @@ def refresh():
                            "category": p.get("category","ไม่ระบุ") or "ไม่ระบุ"}
 
         # 2. 30-day sales (90-day would be too slow - ZORT API timeout)
-        since  = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since})
+        since  = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=20, page_size=100)
 
         qty90 = defaultdict(float)
         rev90 = defaultdict(float)
@@ -610,7 +616,7 @@ function buildCategories() {
   const cats = {};
   allProducts.forEach(p => {
     if (!cats[p.category]) cats[p.category] = {name:p.category, s90:0, products:[]};
-    cats[p.category].s90 += p.sales30;
+    cats[p.category].s90 += p.sales14;
     cats[p.category].products.push(p);
   });
   const sorted = Object.values(cats).sort((a,b) => b.s90 - a.s90);
@@ -623,11 +629,11 @@ function buildCategories() {
   });
   // ABC per product within category
   sorted.forEach(cat => {
-    const ps  = [...cat.products].sort((a,b) => b.sales30 - a.sales30);
-    const tot = ps.reduce((s,p) => s + p.sales30, 0);
+    const ps  = [...cat.products].sort((a,b) => b.sales14 - a.sales14);
+    const tot = ps.reduce((s,p) => s + p.sales14, 0);
     let c2 = 0;
     ps.forEach(p => {
-      c2 += p.sales30;
+      c2 += p.sales14;
       const pct = c2 / tot;
       p.abc = pct <= 0.70 ? 'A' : pct <= 0.90 ? 'B' : 'C';
     });
