@@ -186,6 +186,39 @@ def debug_order():
         return jsonify({"error": str(e)})
 
 
+@app.route("/api/debug-sales")
+def debug_sales():
+    """Show raw sales counts per SKU for last 14 days - for diagnosing qty accuracy"""
+    cfg = load_cfg()
+    since = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
+    try:
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=20, page_size=100)
+        total_orders = len(orders)
+        sku_qty = {}
+        sku_orders = {}
+        for order in orders:
+            items = (order.get("products") or order.get("orderProducts") or
+                     order.get("items") or order.get("list") or [])
+            for it in items:
+                s = it.get("sku") or it.get("productSku","")
+                if not s:
+                    continue
+                n = float(it.get("qty") or it.get("number") or it.get("quantity") or 0)
+                bn = float(it.get("bundlenumber") or 0)
+                sku_qty[s] = sku_qty.get(s, 0) + n
+                sku_orders[s] = sku_orders.get(s, 0) + 1
+        # Sort by qty descending, return top 30
+        top = sorted(sku_qty.items(), key=lambda x: x[1], reverse=True)[:30]
+        return jsonify({
+            "total_orders": total_orders,
+            "since": since,
+            "top_skus": [{"sku": s, "qty": q, "order_lines": sku_orders[s]} for s,q in top]
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()})
+
+
 @app.route("/api/refresh")
 def refresh():
     global _cache_data, _cache_time
