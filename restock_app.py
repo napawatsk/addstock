@@ -192,7 +192,7 @@ def debug_sales():
     cfg = load_cfg()
     since = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
     try:
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=20, page_size=100)
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=50, page_size=200)
         total_orders = len(orders)
         sku_qty = {}
         sku_orders = {}
@@ -719,8 +719,10 @@ function buildHome() {
     const needN   = prods.filter(p => p.canMove > 0).length;
     const total   = prods.length;
     const urgPct  = needN / total;
-    const bdgCls  = needN === 0 ? 'ok' : urgPct >= 0.5 ? 'urgent' : 'warn';
-    const bdgTxt  = needN === 0 ? `✓ OK ทั้งหมด` : `⚠️ เติม ${needN}/${total}`;
+    const noKhlN  = prods.filter(p => p.noKhl).length;
+    const anyNeed = needN + noKhlN;
+    const bdgCls  = anyNeed === 0 ? 'ok' : (urgPct >= 0.5 || noKhlN > 0) ? 'urgent' : 'warn';
+    const bdgTxt  = anyNeed === 0 ? `✓ OK ทั้งหมด` : (needN > 0 && noKhlN > 0) ? `⚠️ ${needN} ⛔ ${noKhlN}` : needN > 0 ? `⚠️ เติม ${needN}/${total}` : `⛔ สั่ง ${noKhlN}`;
     return `<div class="cat-card ${cat.abc}" onclick="openCat('${cat.name.replace(/'/g,"\\'")}')">
       <div class="rank-num">${i+1}</div>
       <div class="abc ${cat.abc}">${cat.abc}</div>
@@ -729,6 +731,29 @@ function buildHome() {
       <div class="cneed"><span class="n-badge ${bdgCls}">${bdgTxt}</span></div>
     </div>`;
   }).join('');
+  // ── Zero-stock section ──────────────────────────────────────
+  const zeroProds = allCalc.filter(p => p.khlang === 0 && p.front === 0 && p.daily > 0);
+  let zs = document.getElementById('zero-sec');
+  if (!zs) {
+    zs = document.createElement('div');
+    zs.id = 'zero-sec';
+    zs.style.cssText = 'margin:4px 0 12px;background:var(--card);border-radius:12px;overflow:hidden';
+    grid.insertAdjacentElement('afterend', zs);
+  }
+  if (zeroProds.length > 0) {
+    const grps = {};
+    zeroProds.slice().sort((a,b) => b.daily - a.daily).forEach(p => {
+      if (!grps[p.category]) grps[p.category] = [];
+      grps[p.category].push(p);
+    });
+    zs.innerHTML = '<div style="padding:10px 16px;font-size:12px;font-weight:700;color:var(--red);border-bottom:1px solid rgba(0,0,0,.08)">⛔ สต๊อกหมดทุกที่ (' + zeroProds.length + ' รายการ) — ต้องสั่งซัพพลายเออร์</div>' +
+      Object.entries(grps).map(([cat,ps]) =>
+        '<div style="padding:5px 16px;font-size:10px;font-weight:600;color:var(--sub);background:var(--bg)">' + cat + '</div>' +
+        ps.map(p => '<div class="prod-row out"><div class="pr-abc ' + p.abc + '">' + p.abc + '</div><div class="pr-info"><div class="pr-name">' + p.name + '</div><div class="pr-sku">' + p.sku + ' · ' + p.daily.toFixed(2) + '/วัน</div></div><div class="pr-stocks"><div class="pr-stk">ร้าน: <b class="zero">0</b></div><div class="pr-stk">คลัง: <b>0</b></div></div><div class="pr-action"><span class="act-out">⛔ สั่งเพิ่ม</span></div></div>').join('')
+      ).join('');
+  } else {
+    zs.innerHTML = '';
+  }
 }
 
 // ── Open category detail ──────────────────────────────────
