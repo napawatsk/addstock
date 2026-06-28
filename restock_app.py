@@ -27,6 +27,11 @@ ZORT_BASE   = "https://open-api.zortout.com/v4"
 # In-memory config overlay (used on cloud where disk is ephemeral)
 _mem_cfg = {}
 
+# Cache: เก็บผล refresh ล่าสุดไว้ ไม่ดึง ZORT ซ้ำถ้าข้อมูลยังใหม่อยู่
+_cache_data = None
+_cache_time = None
+CACHE_TTL_MINUTES = 60  # โหลดใหม่ทุก 1 ชั่วโมง
+
 # ────────────────────────────────────────────────────────────
 # Config  (env vars → file → defaults)
 # ────────────────────────────────────────────────────────────
@@ -155,9 +160,20 @@ def debug():
 
 @app.route("/api/refresh")
 def refresh():
+    global _cache_data, _cache_time
     cfg = load_cfg()
     if not cfg.get("storename") or not cfg.get("apikey") or not cfg.get("apisecret"):
         return jsonify({"error": "กรุณาตั้งค่า API Key ก่อน (กดไอคอน ⚙️)"}), 400
+
+    # คืน cache ถ้าข้อมูลยังไม่เก่าเกิน CACHE_TTL_MINUTES
+    force = request.args.get("force") == "1"
+    if not force and _cache_data and _cache_time:
+        age_min = (datetime.now() - _cache_time).total_seconds() / 60
+        if age_min < CACHE_TTL_MINUTES:
+            cached = dict(_cache_data)
+            cached["cached"] = True
+            cached["cache_age_min"] = round(age_min, 1)
+            return jsonify(cached)
 
     kc = cfg.get("khlang_code","")
     fc = cfg.get("front_code","")
@@ -225,12 +241,16 @@ def refresh():
                 "abc":      abc_map.get(s, "C"),
             })
 
-        return jsonify({
+        result = {
             "products":     products,
             "refreshed_at": datetime.now().strftime("%d/%m %H:%M"),
             "cycle_days":   int(cfg.get("cycle_days", 4)),
             "buffer":       float(cfg.get("buffer", 1.5)),
-        })
+            "cached":       False,
+        }
+        _cache_data = result
+        _cache_time = datetime.now()
+        return jsonify(result)
 
     except req.exceptions.ConnectionError:
         return jsonify({"error": "เชื่อมต่อ ZORT ไม่ได้ ตรวจสอบอินเทอร์เน็ต"}), 503
