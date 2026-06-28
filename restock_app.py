@@ -282,14 +282,14 @@ def refresh():
             abc_map[s] = "A" if p <= 0.70 else ("B" if p <= 0.90 else "C")
 
         # 4. Build product list
-        all_skus = set(list(khlang_qty) + list(front_qty))
+        all_skus = set(list(khlang_qty) + list(front_qty) + list(qty90))
         products = []
         for s in all_skus:
             kq  = khlang_qty.get(s, 0)
             fq  = front_qty.get(s, 0)
             q90 = qty90.get(s, 0)
-            if q90 <= 0 and fq <= 0 and kq <= 0:
-                continue
+            if s not in meta:
+                continue  # skip ghost SKUs with no name/category
             m = meta.get(s, {"name": s, "category": "ไม่ระบุ"})
             products.append({
                 "sku":      s,
