@@ -201,7 +201,7 @@ def refresh():
                 meta[s] = {"name": p.get("name", s),
                            "category": p.get("category","ไม่ระบุ") or "ไม่ระบุ"}
 
-        # 2. 30-day sales (90-day would be too slow - ZORT API timeout)
+        # 2. 14-day sales (fetch last 14 days of orders)
         since  = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
         orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=20, page_size=100)
 
@@ -243,7 +243,7 @@ def refresh():
                 "khlang":   int(kq),
                 "front":    int(fq),
                 "daily":    round(q90 / 14, 2),
-                "sales30":  int(q90),
+                "sales14":  int(q90),
                 "abc":      abc_map.get(s, "C"),
             })
 
