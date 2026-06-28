@@ -258,7 +258,7 @@ def refresh():
 
         # 2. 14-day sales (fetch last 14 days of orders)
         since  = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=20, page_size=100)
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=100)
 
         qty90 = defaultdict(float)
         rev90 = defaultdict(float)
