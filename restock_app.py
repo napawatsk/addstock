@@ -192,7 +192,7 @@ def debug_sales():
     cfg = load_cfg()
     since = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
     try:
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=50, page_size=200)
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=100)
         total_orders = len(orders)
         sku_qty = {}
         sku_orders = {}
