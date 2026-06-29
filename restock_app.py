@@ -730,7 +730,7 @@ function buildHome() {
       <div class="rank-num">${i+1}</div>
       <div class="abc ${cat.abc}">${cat.abc}</div>
       <div class="cname">${cat.name}</div>
-      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 14 วัน</div>
+      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 10 วัน</div>
       <div class="cneed"><span class="n-badge ${bdgCls}">${bdgTxt}</span></div>
     </div>`;
   }).join('');
