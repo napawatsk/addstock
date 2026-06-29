@@ -190,7 +190,7 @@ def debug_order():
 def debug_sales():
     """Show raw sales counts per SKU for last 14 days - for diagnosing qty accuracy"""
     cfg = load_cfg()
-    since = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
+    since = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
     try:
         orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=100)
         total_orders = len(orders)
@@ -257,7 +257,7 @@ def refresh():
                            "category": p.get("category","ไม่ระบุ") or "ไม่ระบุ"}
 
         # 2. 14-day sales (fetch last 14 days of orders)
-        since  = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
+        since  = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
         orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=100)
 
         qty90 = defaultdict(float)
@@ -297,7 +297,7 @@ def refresh():
                 "category": m["category"],
                 "khlang":   int(kq),
                 "front":    int(fq),
-                "daily":    round(q90 / 14, 2),
+                "daily":    round(q90 / 10, 2),
                 "sales14":  int(q90),
                 "abc":      abc_map.get(s, "C"),
             })
@@ -537,7 +537,7 @@ body{font-family:-apple-system,'Sarabun',sans-serif;font-size:13px;color:var(--t
       <span class="s-chip tot">กด 🔄 เพื่อโหลดข้อมูล</span>
     </div>
     <div id="home-screen">
-      <div class="home-title">หมวดหมู่ · เรียงตามยอดขาย 90 วัน</div>
+      <div class="home-title">หมวดหมู่ · เรียงตามยอดขาย 10 วัน</div>
       <div class="cat-grid" id="cat-grid">
         <div id="empty">
           <div class="ico">📦</div>
