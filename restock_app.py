@@ -195,7 +195,6 @@ def debug_sales():
         orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=500)
         total_orders = len(orders)
         sku_qty = {}
-        sku_rev = {}
         sku_orders = {}
         for order in orders:
             items = (order.get("products") or order.get("orderProducts") or
@@ -207,7 +206,6 @@ def debug_sales():
                 n = float(it.get("qty") or it.get("number") or it.get("quantity") or 0)
                 bn = float(it.get("bundlenumber") or 0)
                 sku_qty[s] = sku_qty.get(s, 0) + n
-                sku_rev[s] = sku_rev.get(s, 0) + float(it.get("totalprice", 0) or 0)
                 sku_orders[s] = sku_orders.get(s, 0) + 1
         # Sort by qty descending, return top 30
         top = sorted(sku_qty.items(), key=lambda x: x[1], reverse=True)[:30]
@@ -301,7 +299,7 @@ def refresh():
                 "front":    int(fq),
                 "daily":    round(q90 / 10, 2),
                 "sales14":  int(q90),
-                "rev10":    float(sku_rev.get(s, 0)),
+                "rev10":    float(rev90.get(s, 0)),
                 "abc":      abc_map.get(s, "C"),
             })
 
