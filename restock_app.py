@@ -192,7 +192,7 @@ def debug_sales():
     cfg = load_cfg()
     since = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
     try:
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=100)
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=500)
         total_orders = len(orders)
         sku_qty = {}
         sku_orders = {}
@@ -258,7 +258,7 @@ def refresh():
 
         # 2. 14-day sales (fetch last 14 days of orders)
         since  = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
-        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=100)
+        orders = all_pages(cfg, "/Order/GetOrders", {"orderdateafter": since}, max_pages=40, page_size=500)
 
         qty90 = defaultdict(float)
         rev90 = defaultdict(float)
@@ -730,7 +730,7 @@ function buildHome() {
       <div class="rank-num">${i+1}</div>
       <div class="abc ${cat.abc}">${cat.abc}</div>
       <div class="cname">${cat.name}</div>
-      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 10 วัน</div>
+      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 14 วัน</div>
       <div class="cneed"><span class="n-badge ${bdgCls}">${bdgTxt}</span></div>
     </div>`;
   }).join('');
