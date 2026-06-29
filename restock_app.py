@@ -731,7 +731,7 @@ function buildHome() {
       <div class="rank-num">${i+1}</div>
       <div class="abc ${cat.abc}">${cat.abc}</div>
       <div class="cname">${cat.name}</div>
-      <div class="csales">${(cat.s90/1000).toFixed(1)}K ชิ้น / 14 วัน</div>
+      <div class="csales">${(cat.s90/1000).toFixed(1)}K บาท / 10 วัน</div>
       <div class="cneed"><span class="n-badge ${bdgCls}">${bdgTxt}</span></div>
     </div>`;
   }).join('');
@@ -804,7 +804,7 @@ function renderDetail() {
   const needN   = allCalc.filter(p => p.canMove > 0).length;
   const noKhlN  = allCalc.filter(p => p.noKhl).length;
   document.getElementById('dh-stats').innerHTML =
-    `<span><b>${(currentCat.s90/1000).toFixed(1)}K</b> ชิ้น/14วัน</span>
+    `<span><b>${(currentCat.s90/1000).toFixed(1)}K</b> บาท/10วัน</span>
      <span><b>${allCalc.length}</b> SKUs</span>
      <span style="color:var(--red)"><b>${needN}</b> ต้องเติม</span>
      ${noKhlN ? `<span style="color:var(--orange)"><b>${noKhlN}</b> คลังหมด</span>` : ''}`;
