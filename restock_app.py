@@ -30,7 +30,7 @@ _mem_cfg = {}
 # Cache: เก็บผล refresh ล่าสุดไว้ ไม่ดึง ZORT ซ้ำถ้าข้อมูลยังใหม่อยู่
 _cache_data = None
 _cache_time = None
-CACHE_TTL_MINUTES = 60  # โหลดใหม่ทุก 1 ชั่วโมง
+CACHE_TTL_MINUTES = 180  # โหลดใหม่ทุก 3 ชั่วโมง
 
 # ────────────────────────────────────────────────────────────
 # Config  (env vars → file → defaults)
