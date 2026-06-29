@@ -450,6 +450,8 @@ body{font-family:-apple-system,'Sarabun',sans-serif;font-size:13px;color:var(--t
 .fpill.fa.active{background:var(--a);color:#fff;border-color:var(--a)}
 .fpill.fb.active{background:var(--b);color:#fff;border-color:var(--b)}
 .fpill.fc.active{background:var(--c);color:#fff;border-color:var(--c)}
+.fpill.fr{color:#1e7e34;border-color:#1e7e34}
+.fpill.fr.active{background:#1e7e34;color:#fff;border-color:#1e7e34}
 
 /* DETAIL product rows */
 #prod-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}
@@ -563,6 +565,7 @@ body{font-family:-apple-system,'Sarabun',sans-serif;font-size:13px;color:var(--t
       <button class="fpill fa"     onclick="setDF('A',this)">🟢 A</button>
       <button class="fpill fb"     onclick="setDF('B',this)">🟡 B</button>
       <button class="fpill fc"     onclick="setDF('C',this)">🔴 C</button>
+      <button class="fpill fr"     onclick="setDF('ready',this)">🟩 พร้อมขาย</button>
     </div>
     <div id="prod-list"></div>
   </div>
@@ -790,6 +793,7 @@ function renderDetail() {
   let prods = currentCat.products.map(calc);
   if (dFilter === 'need')                      prods = prods.filter(p => p.canMove > 0 || p.noKhl);
   else if (['A','B','C'].includes(dFilter))    prods = prods.filter(p => p.abc === dFilter);
+  else if (dFilter === 'ready')                   prods = prods.filter(p => p.front > 0);
   const ao = {A:0,B:1,C:2};
   prods.sort((a,b) =>
     ((b.canMove>0||b.noKhl)?1:0) - ((a.canMove>0||a.noKhl)?1:0) ||
